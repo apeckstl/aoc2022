@@ -1,4 +1,4 @@
-defmodule Aoc2022Test.Day4 do
+defmodule Aoc2022Test.Day5 do
   use ExUnit.Case
 
   test "test day 5 part 1" do

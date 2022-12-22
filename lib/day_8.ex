@@ -48,7 +48,74 @@ defmodule Day8 do
   end
 
   def part_2(file_path) do
+    rows =
+      file_path
+      |> FileHelpers.Reader.read_file()
+      |> Enum.map(&String.split(&1, "", trim: true))
+      |> Enum.map(fn row -> Enum.map(row, &String.to_integer/1) end)
 
+    columns =
+      file_path
+      |> FileHelpers.Reader.read_file_as_columns()
+      |> Enum.map(fn col -> Enum.map(col, &String.to_integer/1) end)
+
+    %{max: max} = Enum.reduce(rows, %{max: 0, row_idx: 0}, &reduce_row(&1, &2, rows, columns))
+    max
+  end
+
+  defp reduce_row(row, %{max: current_max, row_idx: row_idx}, rows, columns) do
+    {new_max, _} = Enum.reduce(row, {current_max, 0}, fn (element, {before_max, col_idx}) ->
+      # need to calculate the viewing distance in each direction for this tree
+      above =
+        columns
+        |> Enum.at(col_idx)
+        |> Enum.slice(0..row_idx)
+        |> Enum.drop(-1)
+        |> Enum.reverse()
+        |> get_viewing_distance(element)
+
+      left =
+        rows
+        |> Enum.at(row_idx)
+        |> Enum.slice(0..col_idx)
+        |> Enum.drop(-1)
+        |> Enum.reverse()
+        |> get_viewing_distance(element)
+
+      below =
+        columns
+        |> Enum.at(col_idx)
+        |> Enum.slice(row_idx..-1)
+        |> Enum.drop(1)
+        |> get_viewing_distance(element)
+
+      right =
+        rows
+        |> Enum.at(row_idx)
+        |> Enum.slice(col_idx..-1)
+        |> Enum.drop(1)
+        |> get_viewing_distance(element)
+
+      scenic_value = above * left * below * right
+
+      if scenic_value > before_max do
+        {scenic_value, col_idx + 1}
+      else
+        {before_max, col_idx + 1}
+      end
+    end)
+
+    %{max: new_max, row_idx: row_idx + 1}
+  end
+
+  defp get_viewing_distance(slice, element) do
+    Enum.reduce_while(slice, 0, fn (tree, acc) ->
+      if tree < element do
+        {:cont, acc + 1}
+      else
+        {:halt, acc + 1}
+      end
+    end)
   end
 
 end
